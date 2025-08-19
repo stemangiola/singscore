@@ -99,3 +99,14 @@ setMethod("rankGenes",
           function(expreMatrix, tiesMethod = 'min', stableGenes = NULL){
             rankGenes(SummarizedExperiment::assay(expreMatrix), tiesMethod, stableGenes)
           })
+
+#' @rdname rankGenes
+setMethod("rankGenes",
+          signature('DelayedMatrix','ANY','ANY'),
+          function(expreMatrix, tiesMethod = 'min', stableGenes = NULL){
+            if (is.null(stableGenes)) {
+              return(rankExpr(expreMatrix, tiesMethod))
+            } else {
+              return(rankExprStable(expreMatrix, tiesMethod, stableGenes))
+            }
+          })

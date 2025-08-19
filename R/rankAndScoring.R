@@ -1,12 +1,18 @@
 #' @include singscore.R
+#' @importFrom DelayedMatrixStats colRanks
+#' @importFrom DelayedArray DelayedArray
 NULL
 
 rankExpr <- function(exprsM, tiesMethod = "min") {
   rname= rownames(exprsM)
   cname = colnames(exprsM)
-  rankedData = matrixStats::colRanks(as.matrix(exprsM),
-                                      ties.method = tiesMethod,
-                                      preserveShape = TRUE)
+
+    rankedData = colRanks(
+      exprsM,
+      ties.method = tiesMethod,
+      preserveShape = TRUE
+    )
+  
   rownames(rankedData) = rname
   colnames(rankedData) = cname
   
@@ -15,24 +21,61 @@ rankExpr <- function(exprsM, tiesMethod = "min") {
   return (rankedData)
 }
 
+#' Block-wise stable gene ranking helper
+#'
+#' Computes stable gene-based ranks for a block of expression data. For each column (sample),
+#' each gene is ranked according to its position relative to the sorted values of the stable genes.
+#' Used internally by \code{rankExprStable} to enable block processing of large matrices.
+#'
+#' @param block A numeric matrix (genes x samples) block of expression values.
+#' @param st_idx Integer vector of row indices corresponding to stable genes.
+#'
+#' @return A numeric matrix of the same dimensions as \code{block} with stable gene-based ranks.
+#'
+#' @importFrom stats findInterval
+#' @keywords internal
+#' @noRd
+.rank_block_by_stable_genes <- function(block, st_idx) {
+  nb <- nrow(block)
+  kb <- ncol(block)
+  out <- matrix(NA_real_, nrow = nb, ncol = kb)
+  s_idx <- st_idx
+  s_idx <- s_idx[s_idx >= 1 & s_idx <= nb]
+  for (j in seq_len(kb)) {
+    x <- block[, j]
+    # compute ranks: number of stable genes with value less than x, plus 1
+    rs <- rowSums(outer(x, x[s_idx], '>')) + 1
+    out[, j] <- rs
+  }
+  out
+}
+
+#' @importFrom DelayedArray blockApply
+#' @importFrom DelayedArray colAutoGrid
+#' @importFrom DelayedArray DelayedArray
 rankExprStable <- function(exprsM, tiesMethod = "min", stgenes) {
+ 
   stgenes = intersect(stgenes, rownames(exprsM))
   stopifnot(length(stgenes) > 0)
-  
+
   rname = rownames(exprsM)
   cname = colnames(exprsM)
+
+  # Work with matrix-like via DelayedArray, block over columns
+  dx <- DelayedArray(exprsM)
+  st_idx <- match(stgenes, rname)
   
-  #compute ranks
-  rankedData = apply(exprsM, 2, function(x) {
-    rowSums(outer(x, x[stgenes], '>')) + 1
-  })
-  
-  #normlise ranks
+  parts <- blockApply(
+    dx,
+    FUN = .rank_block_by_stable_genes,
+    grid = colAutoGrid(dx),
+    st_idx = st_idx
+  )
+  rankedData <- do.call(cbind, parts)
   rankedData = rankedData / (length(stgenes) + 1)
-  
   rownames(rankedData) = rname
   colnames(rankedData) = cname
-  
+
   #indicator of the type of ranks
   attr(rankedData, 'stable') = TRUE
   return(rankedData)
