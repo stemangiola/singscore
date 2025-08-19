@@ -7,6 +7,7 @@
 \alias{rankGenes,DGEList-method}
 \alias{rankGenes,ExpressionSet-method}
 \alias{rankGenes,SummarizedExperiment-method}
+\alias{rankGenes,DelayedMatrix-method}
 \title{Rank genes by the gene expression intensities}
 \usage{
 rankGenes(expreMatrix, tiesMethod = "min", stableGenes = NULL)
@@ -20,6 +21,8 @@ rankGenes(expreMatrix, tiesMethod = "min", stableGenes = NULL)
 \S4method{rankGenes}{ExpressionSet}(expreMatrix, tiesMethod = "min", stableGenes = NULL)
 
 \S4method{rankGenes}{SummarizedExperiment}(expreMatrix, tiesMethod = "min", stableGenes = NULL)
+
+\S4method{rankGenes}{DelayedMatrix}(expreMatrix, tiesMethod = "min", stableGenes = NULL)
 }
 \arguments{
 \item{expreMatrix}{matrix, data.frame, ExpressionSet, DGEList or
