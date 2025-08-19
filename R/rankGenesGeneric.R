@@ -68,7 +68,7 @@ setMethod("rankGenes",
             } else {
               stopifnot(is.character(stableGenes))
               stopifnot(length(stableGenes) > 0)
-              rankMat = rankExprStable(expreMatrix, tiesMethod, stableGenes)
+              rankMat = rankExprStable_delayed(expreMatrix, tiesMethod, stableGenes)
             }
             return(rankMat)
 })
@@ -107,6 +107,6 @@ setMethod("rankGenes",
             if (is.null(stableGenes)) {
               return(rankExpr(expreMatrix, tiesMethod))
             } else {
-              return(rankExprStable(expreMatrix, tiesMethod, stableGenes))
+              return(rankExprStable_delayed(expreMatrix, tiesMethod, stableGenes))
             }
           })

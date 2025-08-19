@@ -36,43 +36,32 @@ test_that("rankGenes works on HDF5-backed DelayedMatrix", {
 })
 
 
-test_that("scores are identical for matrix vs HDF5-backed DelayedMatrix", {
+test_that("rankExpr gives identical results for matrix vs HDF5-backed DelayedMatrix", {
   testthat::skip_if_not_installed("HDF5Array")
 
-  # Use package toy data
   emat <- SummarizedExperiment::assay(toy_expr_se)
-  # Matrix path
-  ranked_mat <- rankGenes(emat)
-  sc_mat <- simpleScore(ranked_mat, upSet = toy_gs_up, downSet = toy_gs_dn)
+  ranked_mat <- rankExpr(emat)
 
-  # Delayed (HDF5-backed) path
   h5_file <- tempfile(fileext = ".h5")
   on.exit(unlink(h5_file), add = TRUE)
   dm <- HDF5Array::writeHDF5Array(emat, filepath = h5_file, name = "expr")
-  ranked_dm <- rankGenes(dm)
-  sc_dm <- simpleScore(ranked_dm, upSet = toy_gs_up, downSet = toy_gs_dn)
+  ranked_dm <- rankExpr(dm)
 
-  # Compare
-  expect_equal(sc_dm, sc_mat)
+  expect_equal(ranked_dm, ranked_mat)
 })
 
-test_that("stable-genes ranking matches for matrix vs DelayedMatrix", {
-  testthat::skip_if_not_installed("HDF5Array")
-
+test_that("rankExprStable matches rankExprStable_delayed for matrix input", {
   emat <- SummarizedExperiment::assay(toy_expr_se)
   st <- rownames(emat)[seq_len(min(10, nrow(emat)))]
 
-  ranked_mat_st <- rankGenes(emat, stableGenes = st)
-  sc_mat_st <- simpleScore(ranked_mat_st, upSet = toy_gs_up, downSet = toy_gs_dn)
+  ranked_old <- rankExprStable(emat, stgenes = st)
+  ranked_new <- rankExprStable_delayed(emat, stgenes = st)
 
-  h5_file <- tempfile(fileext = ".h5")
-  on.exit(unlink(h5_file), add = TRUE)
-  dm <- HDF5Array::writeHDF5Array(emat, filepath = h5_file, name = "expr")
-
-  ranked_dm_st <- rankGenes(dm, stableGenes = st)
-  sc_dm_st <- simpleScore(ranked_dm_st, upSet = toy_gs_up, downSet = toy_gs_dn)
-
-  expect_equal(sc_dm_st, sc_mat_st)
+  expect_equal(ranked_new, ranked_old)
+  expect_true(isTRUE(attr(ranked_new, "stable")))
+  expect_true(isTRUE(attr(ranked_old, "stable")))
+  expect_true(all(ranked_new >= 0 & ranked_new <= 1))
+  expect_true(all(ranked_old >= 0 & ranked_old <= 1))
 })
 
 

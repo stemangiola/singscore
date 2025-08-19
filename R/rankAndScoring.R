@@ -25,7 +25,7 @@ rankExpr <- function(exprsM, tiesMethod = "min") {
 #'
 #' Computes stable gene-based ranks for a block of expression data. For each column (sample),
 #' each gene is ranked according to its position relative to the sorted values of the stable genes.
-#' Used internally by \code{rankExprStable} to enable block processing of large matrices.
+#' Used internally by \code{rankExprStable_delayed} to enable block processing of large matrices.
 #'
 #' @param block A numeric matrix (genes x samples) block of expression values.
 #' @param st_idx Integer vector of row indices corresponding to stable genes.
@@ -36,6 +36,7 @@ rankExpr <- function(exprsM, tiesMethod = "min") {
 #' @keywords internal
 #' @noRd
 .rank_block_by_stable_genes <- function(block, st_idx) {
+  
   nb <- nrow(block)
   kb <- ncol(block)
   out <- matrix(NA_real_, nrow = nb, ncol = kb)
@@ -50,10 +51,33 @@ rankExpr <- function(exprsM, tiesMethod = "min") {
   out
 }
 
+rankExprStable <- function(exprsM, tiesMethod = "min", stgenes) {
+  stgenes = intersect(stgenes, rownames(exprsM))
+  stopifnot(length(stgenes) > 0)
+  
+  rname = rownames(exprsM)
+  cname = colnames(exprsM)
+  
+  #compute ranks
+  rankedData = apply(exprsM, 2, function(x) {
+    rowSums(outer(x, x[stgenes], '>')) + 1
+  })
+  
+  #normlise ranks
+  rankedData = rankedData / (length(stgenes) + 1)
+  
+  rownames(rankedData) = rname
+  colnames(rankedData) = cname
+  
+  #indicator of the type of ranks
+  attr(rankedData, 'stable') = TRUE
+  return(rankedData)
+}
+
 #' @importFrom DelayedArray blockApply
 #' @importFrom DelayedArray colAutoGrid
 #' @importFrom DelayedArray DelayedArray
-rankExprStable <- function(exprsM, tiesMethod = "min", stgenes) {
+rankExprStable_delayed <- function(exprsM, tiesMethod = "min", stgenes) {
  
   stgenes = intersect(stgenes, rownames(exprsM))
   stopifnot(length(stgenes) > 0)
