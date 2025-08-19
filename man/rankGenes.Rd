@@ -10,19 +10,19 @@
 \alias{rankGenes,DelayedMatrix-method}
 \title{Rank genes by the gene expression intensities}
 \usage{
-rankGenes(expreMatrix, tiesMethod = "min", stableGenes = NULL)
+rankGenes(expreMatrix, tiesMethod = "min", stableGenes = NULL, workers = 1)
 
-\S4method{rankGenes}{matrix}(expreMatrix, tiesMethod = "min", stableGenes = NULL)
+\S4method{rankGenes}{matrix}(expreMatrix, tiesMethod = "min", stableGenes = NULL, workers = 1)
 
-\S4method{rankGenes}{data.frame}(expreMatrix, tiesMethod = "min", stableGenes = NULL)
+\S4method{rankGenes}{data.frame}(expreMatrix, tiesMethod = "min", stableGenes = NULL, workers = 1)
 
-\S4method{rankGenes}{DGEList}(expreMatrix, tiesMethod = "min", stableGenes = NULL)
+\S4method{rankGenes}{DGEList}(expreMatrix, tiesMethod = "min", stableGenes = NULL, workers = 1)
 
-\S4method{rankGenes}{ExpressionSet}(expreMatrix, tiesMethod = "min", stableGenes = NULL)
+\S4method{rankGenes}{ExpressionSet}(expreMatrix, tiesMethod = "min", stableGenes = NULL, workers = 1)
 
-\S4method{rankGenes}{SummarizedExperiment}(expreMatrix, tiesMethod = "min", stableGenes = NULL)
+\S4method{rankGenes}{SummarizedExperiment}(expreMatrix, tiesMethod = "min", stableGenes = NULL, workers = 1)
 
-\S4method{rankGenes}{DelayedMatrix}(expreMatrix, tiesMethod = "min", stableGenes = NULL)
+\S4method{rankGenes}{DelayedMatrix}(expreMatrix, tiesMethod = "min", stableGenes = NULL, workers = 1)
 }
 \arguments{
 \item{expreMatrix}{matrix, data.frame, ExpressionSet, DGEList or
@@ -36,6 +36,9 @@ rank genes using expression of stable genes. This is required when using the
 stable genes dependent version of singscore (see details in \code{simpleScore}).
 Stable genes for solid cancers (carcinomas) and blood transcriptomes can be
 obtained using the \code{getStableGenes} function}
+
+\item{workers}{integer, number of workers for parallel processing when using
+stable genes with DelayedMatrix objects (default: 1)}
 }
 \value{
 The ranked gene expression matrix that has samples in columns and
@@ -67,10 +70,15 @@ rankGenes(e)
 #scoring using the stable version of singscore
 rankGenes(e, stableGenes = c('2', '20', '25'))
 
+# With progress bar for DelayedMatrix objects
 \dontrun{
 #for real cancer or blood datasets, use getStableGenes()
 rankGenes(cancer_expr, stableGenes = getStableGenes(5))
 rankGenes(blood_expr, stableGenes = getStableGenes(5, type = 'blood'))
+
+# Enable progress bar for large DelayedMatrix objects
+rankGenes(delayed_matrix, stableGenes = stable_genes, 
+          workers = 4)
 }
 }
 \seealso{

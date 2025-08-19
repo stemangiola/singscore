@@ -77,7 +77,9 @@ rankExprStable <- function(exprsM, tiesMethod = "min", stgenes) {
 #' @importFrom DelayedArray blockApply
 #' @importFrom DelayedArray colAutoGrid
 #' @importFrom DelayedArray DelayedArray
-rankExprStable_delayed <- function(exprsM, tiesMethod = "min", stgenes) {
+#' @importFrom BiocParallel MulticoreParam
+rankExprStable_delayed <- function(exprsM, tiesMethod = "min", stgenes, 
+                                   workers = 1) {
  
   stgenes = intersect(stgenes, rownames(exprsM))
   stopifnot(length(stgenes) > 0)
@@ -89,11 +91,15 @@ rankExprStable_delayed <- function(exprsM, tiesMethod = "min", stgenes) {
   dx <- DelayedArray(exprsM)
   st_idx <- match(stgenes, rname)
   
+  # Set up BiocParallel param with progress bar enabled
+  param <- MulticoreParam(workers, progressbar = TRUE)
+  
   parts <- blockApply(
     dx,
     FUN = .rank_block_by_stable_genes,
     grid = colAutoGrid(dx),
-    st_idx = st_idx
+    st_idx = st_idx,
+    BPPARAM = param
   )
   rankedData <- do.call(cbind, parts)
   rankedData = rankedData / (length(stgenes) + 1)
