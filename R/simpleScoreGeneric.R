@@ -190,3 +190,115 @@ function(rankData,
 
   return(df)
 })
+
+#' @rdname simpleScore
+setMethod("simpleScore", signature(
+  rankData = 'DelayedMatrix',
+  upSet = 'vector',
+  downSet = 'missing'
+),
+function(rankData,
+         upSet,
+         downSet = NULL,
+         subSamples = NULL,
+         centerScore = TRUE,
+         dispersionFun = mad,
+         knownDirection = TRUE) {
+
+  stopifnot(is.logical(centerScore), is.logical(knownDirection))
+  upSet = GSEABase::GeneSet(as.character(upSet))
+  df = singleSingscore(
+    rankData,
+    upSet,
+    downSet = downSet,
+    subSamples = subSamples,
+    centerScore = centerScore,
+    dispersionFun = mad,
+    knownDirection = knownDirection
+  )
+  return(df)
+})
+
+#' @rdname simpleScore
+setMethod("simpleScore", signature(
+  rankData = 'DelayedMatrix',
+  upSet = 'GeneSet',
+  downSet = 'missing'
+),
+function(rankData,
+         upSet,
+         downSet = NULL,
+         subSamples = NULL,
+         centerScore = TRUE,
+         dispersionFun = mad,
+         knownDirection = TRUE) {
+
+  stopifnot(is.logical(centerScore), is.logical(knownDirection))
+  df = singleSingscore(
+    rankData,
+    upSet,
+    downSet = downSet,
+    subSamples = subSamples,
+    centerScore = centerScore,
+    dispersionFun = mad,
+    knownDirection = knownDirection
+  )
+  return(df)
+})
+
+#' @rdname simpleScore
+setMethod("simpleScore", signature(
+  rankData = 'DelayedMatrix',
+  upSet = 'vector',
+  downSet = 'vector'
+),
+function(rankData,
+         upSet,
+         downSet = NULL,
+         subSamples = NULL,
+         centerScore = TRUE,
+         dispersionFun = mad,
+         knownDirection = TRUE) {
+
+  stopifnot(is.logical(centerScore), is.logical(knownDirection))
+  upSet = GSEABase::GeneSet(as.character(upSet))
+  downSet = GSEABase::GeneSet(as.character(downSet))
+  df = singleSingscore(
+    rankData,
+    upSet,
+    downSet = downSet,
+    subSamples = subSamples,
+    centerScore = centerScore,
+    dispersionFun = mad,
+    knownDirection = knownDirection
+  )
+  return(df)
+})
+
+#' @rdname simpleScore
+setMethod("simpleScore", signature(
+  rankData = 'DelayedMatrix',
+  upSet = 'GeneSet',
+  downSet = 'GeneSet'
+),
+function(rankData,
+         upSet,
+         downSet = NULL,
+         subSamples = NULL,
+         centerScore = TRUE,
+         dispersionFun = mad,
+         knownDirection = TRUE) {
+
+  stopifnot(is.logical(centerScore), is.logical(knownDirection))
+  df = singleSingscore(
+    rankData,
+    upSet,
+    downSet = downSet,
+    subSamples = subSamples,
+    centerScore = centerScore,
+    dispersionFun = mad,
+    knownDirection = knownDirection
+  )
+
+  return(df)
+})

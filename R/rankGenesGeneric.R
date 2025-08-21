@@ -120,7 +120,8 @@ setMethod("rankGenes",
           function(expreMatrix, tiesMethod = 'min', stableGenes = NULL,
                    workers = 1){
             if (is.null(stableGenes)) {
-              return(rankExpr(expreMatrix, tiesMethod))
+              # Use the delayed ranking function directly with user's workers parameter
+              return(rankExprDelayed(expreMatrix, tiesMethod, workers))
             } else {
               return(rankExprStable_delayed(expreMatrix, tiesMethod, stableGenes, 
                                            workers))

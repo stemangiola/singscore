@@ -1,17 +1,31 @@
 #' @include singscore.R
 #' @importFrom DelayedMatrixStats colRanks
 #' @importFrom DelayedArray DelayedArray
+#' @importFrom DelayedArray blockApply
+#' @importFrom DelayedArray colAutoGrid
+#' @importFrom DelayedArray rowAutoGrid
+#' @importFrom HDF5Array writeHDF5Array
+#' @importFrom HDF5Array HDF5Array
+#' @importFrom BiocParallel MulticoreParam
 NULL
 
 rankExpr <- function(exprsM, tiesMethod = "min") {
   rname= rownames(exprsM)
   cname = colnames(exprsM)
 
-    rankedData = colRanks(
-      exprsM,
-      ties.method = tiesMethod,
-      preserveShape = TRUE
-    )
+  # For DelayedMatrix, use our custom block-wise ranking
+  if (is(exprsM, "DelayedArray")) {
+    message("Using block-wise ranking for DelayedMatrix")
+    rankedData <- rankExprDelayed(exprsM, tiesMethod, workers = 1)
+    return(rankedData)
+  }
+  
+  # For regular matrices, use colRanks
+  rankedData = colRanks(
+    exprsM,
+    ties.method = tiesMethod,
+    preserveShape = TRUE
+  )
   
   rownames(rankedData) = rname
   colnames(rankedData) = cname
@@ -19,6 +33,91 @@ rankExpr <- function(exprsM, tiesMethod = "min") {
   #indicator of the type of ranks
   attr(rankedData, 'stable') = FALSE
   return (rankedData)
+}
+
+#' DelayedArray-compatible ranking function with parallel processing
+#'
+#' This function ranks gene expression data and returns a DelayedArray that remains
+#' on-disk, preventing memory issues with large datasets. It supports parallel processing
+#' and uses block-wise operations to handle large DelayedMatrix objects efficiently.
+#'
+#' @param exprsM A DelayedArray or matrix of expression values
+#' @param tiesMethod Method for handling ties
+#' @param workers Number of parallel workers (default: 1)
+#' @param output_file Optional HDF5 file path for output storage
+#'
+#' @return A DelayedArray with ranked gene expression data
+#' @export
+rankExprDelayed <- function(exprsM, tiesMethod = "min", workers = 1, output_file = NULL) {
+  rname = rownames(exprsM)
+  cname = colnames(exprsM)
+
+  # Convert to DelayedArray if not already
+  if (!is(exprsM, "DelayedArray")) {
+    exprsM <- DelayedArray(exprsM)
+  }
+
+  # Use block-wise ranking to avoid colRanks bugs
+  message("Using block-wise ranking for DelayedMatrix")
+  
+  # Get grid for column-wise processing with smaller blocks for large datasets
+  if (ncol(exprsM) > 10000) {
+    # For very large datasets, use smaller blocks
+    col_grid <- DelayedArray::colAutoGrid(exprsM, ncol = min(1000, ncol(exprsM) %/% 10))
+    message("Using smaller blocks for large dataset (", ncol(exprsM), " columns)")
+  } else {
+    col_grid <- DelayedArray::colAutoGrid(exprsM)
+  }
+  
+  # Configure parallel processing with progress bar
+  # Reduce workers for very large datasets to prevent memory issues
+  # if (ncol(exprsM) > 50000) {
+  #   actual_workers <- min(workers, 2)
+  #   message("Reducing workers to ", actual_workers, " for very large dataset")
+  # } else {
+  #   actual_workers <- workers
+  # }
+  
+  if (workers > 1) {
+    bpparam <- BiocParallel::MulticoreParam(workers = workers, progressbar = TRUE)
+    message("Using ", workers, " workers for parallel processing with progress bar")
+  } else {
+    bpparam <- BiocParallel::SerialParam(progressbar = TRUE)
+    message("Using single worker with progress bar")
+  }
+  
+  # Process each column block
+  ranked_blocks <- DelayedArray::blockApply(
+    exprsM,
+    FUN = function(block) {
+      # Use colRanks on each block
+      colRanks(
+        block,
+        ties.method = tiesMethod,
+        preserveShape = TRUE
+      )
+    },
+    grid = col_grid,
+    BPPARAM = bpparam
+  )
+  
+  # Combine blocks into a single DelayedArray
+  # Use cbind instead of arbind to avoid vector size issues
+  rankedData <- do.call(cbind, ranked_blocks)
+  
+  # Ensure it's a DelayedArray
+  if (!is(rankedData, "DelayedArray")) {
+    rankedData <- DelayedArray(rankedData)
+  }
+  
+  # Save to HDF5 if output file specified
+  if (!is.null(output_file)) {
+    rankedData <- writeHDF5Array(rankedData, filepath = output_file, name = "ranked_data")
+  }
+  
+  #indicator of the type of ranks
+  attr(rankedData, 'stable') = FALSE
+  return(rankedData)
 }
 
 #' Block-wise stable gene ranking helper
@@ -198,6 +297,12 @@ emptyScoreDf <- function(onegs = TRUE) {
 calcScores <- function(ranks, geneset, dispersionFun, bounds, scoffset = 0) {
   #compute raw score
   gsranks = ranks[geneIds(geneset), , drop = FALSE]
+  
+  # Ensure gsranks is a proper matrix for colMeans
+  if (is(gsranks, "DelayedArray")) {
+    gsranks <- as.matrix(gsranks)
+  }
+  
   gsscore = colMeans(gsranks)
   gsscore = (gsscore - bounds$lowBound) / (bounds$upBound - bounds$lowBound)
 
