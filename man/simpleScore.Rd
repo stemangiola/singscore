@@ -6,6 +6,10 @@
 \alias{simpleScore,matrix,GeneSet,missing-method}
 \alias{simpleScore,matrix,vector,vector-method}
 \alias{simpleScore,matrix,GeneSet,GeneSet-method}
+\alias{simpleScore,DelayedMatrix,vector,missing-method}
+\alias{simpleScore,DelayedMatrix,GeneSet,missing-method}
+\alias{simpleScore,DelayedMatrix,vector,vector-method}
+\alias{simpleScore,DelayedMatrix,GeneSet,GeneSet-method}
 \title{single-sample gene-set scoring method}
 \usage{
 simpleScore(
@@ -49,6 +53,46 @@ simpleScore(
 )
 
 \S4method{simpleScore}{matrix,GeneSet,GeneSet}(
+  rankData,
+  upSet,
+  downSet = NULL,
+  subSamples = NULL,
+  centerScore = TRUE,
+  dispersionFun = mad,
+  knownDirection = TRUE
+)
+
+\S4method{simpleScore}{DelayedMatrix,vector,missing}(
+  rankData,
+  upSet,
+  downSet = NULL,
+  subSamples = NULL,
+  centerScore = TRUE,
+  dispersionFun = mad,
+  knownDirection = TRUE
+)
+
+\S4method{simpleScore}{DelayedMatrix,GeneSet,missing}(
+  rankData,
+  upSet,
+  downSet = NULL,
+  subSamples = NULL,
+  centerScore = TRUE,
+  dispersionFun = mad,
+  knownDirection = TRUE
+)
+
+\S4method{simpleScore}{DelayedMatrix,vector,vector}(
+  rankData,
+  upSet,
+  downSet = NULL,
+  subSamples = NULL,
+  centerScore = TRUE,
+  dispersionFun = mad,
+  knownDirection = TRUE
+)
+
+\S4method{simpleScore}{DelayedMatrix,GeneSet,GeneSet}(
   rankData,
   upSet,
   downSet = NULL,

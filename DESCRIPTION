@@ -44,7 +44,6 @@ Roxygen: list(markdown = TRUE)
 Collate: 
     'singscore.R'
     'rankAndScoring.R'
-    'delayedSingscore.R'
     'permuTest.R'
     'generatNullGeneric.R'
     'multiScoreGeneric.R'
